@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>Test</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:var(--tg-theme-bg-color,#0f1d1a);--bg2:var(--tg-theme-secondary-bg-color,#162a25);--tx:var(--tg-theme-text-color,#eaf4f0);--hint:var(--tg-theme-hint-color,#93aea5);--link:var(--tg-theme-link-color,#62e1be);--btn:var(--tg-theme-button-color,#2fb48f);--btx:var(--tg-theme-button-text-color,#fff);--ok:#2fb46f;--bad:#e05260;--warn:#e9a23b;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);min-height:100%}
+body{padding:16px 16px calc(24px + env(safe-area-inset-bottom));font-size:16px;line-height:1.45}
+[hidden]{display:none!important}
+h1{font-size:22px;margin:6px 0 4px}h2{font-size:18px;margin:0 0 10px}
+.muted{color:var(--hint);font-size:14px}
+.card{background:var(--bg2);border-radius:16px;padding:16px;margin:12px 0}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:700;background:var(--btn);color:var(--btx);cursor:pointer}
+.btn:disabled{opacity:.5}
+.btn.ghost{background:transparent;color:var(--link);border:1px solid color-mix(in srgb,var(--link) 50%,transparent)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+input{width:100%;font:inherit;padding:14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--hint) 45%,transparent);background:var(--bg);color:var(--tx)}
+#code{font-size:32px;letter-spacing:10px;text-align:center;font-weight:700}
+.err{color:var(--bad);font-size:14px;min-height:20px;margin:8px 0}
+.names{display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow:auto;margin-top:10px}
+.names button{text-align:left;border:1px solid transparent;background:var(--bg);color:var(--tx);border-radius:10px;padding:12px;font:inherit;cursor:pointer}
+.names button.sel{border-color:var(--btn);background:color-mix(in srgb,var(--btn) 18%,var(--bg))}
+.names button:disabled{opacity:.45}
+.names small{color:var(--hint);float:right}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0 10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid color-mix(in srgb,var(--hint) 25%,transparent)}
+.timer{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.timer.warn{color:var(--warn)}.timer.crit{color:var(--bad);animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.4}}
+.prog{flex:1;height:6px;background:color-mix(in srgb,var(--hint) 25%,transparent);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--btn);transition:width .3s}
+.qnum{color:var(--hint);font-size:14px;margin:14px 0 6px}
+.qtext{font-size:18px;font-weight:600;margin:0 0 14px;white-space:pre-line}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;border:2px solid transparent;background:var(--bg2);color:var(--tx);border-radius:12px;padding:12px;font:inherit;cursor:pointer}
+.opt b{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--hint) 25%,transparent);font-size:14px}
+.opt.sel{border-color:var(--btn)}.opt.sel b{background:var(--btn);color:var(--btx)}
+.nav{display:flex;gap:10px;margin:18px 0 10px}.nav .btn{padding:12px}
+.dots{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.dots button{width:36px;height:36px;border-radius:9px;border:1px solid color-mix(in srgb,var(--hint) 40%,transparent);background:transparent;color:var(--tx);font:inherit;font-size:14px;cursor:pointer}
+.dots button.a{background:color-mix(in srgb,var(--btn) 30%,transparent);border-color:transparent}
+.dots button.c{outline:2px solid var(--btn)}
+.note{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--tx);border-radius:10px;padding:10px 12px;font-size:14px;margin:10px 0}
+.big{font-size:56px;font-weight:800;text-align:center;margin:10px 0 0}
+.center{text-align:center}
+.spin{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:flex;align-items:center;justify-content:center;z-index:20}
+.spin i{width:42px;height:42px;border-radius:50%;border:4px solid var(--hint);border-top-color:var(--btn);animation:r 1s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+</style></head><body>
+<div id="spin" class="spin" hidden><i></i></div>
+
+<section id="sCode">
+ <h1>📝 Test</h1><p class="muted">O‘qituvchi aytgan kodni kiriting.</p>
+ <div class="card"><input id="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="····"><div class="err" id="codeErr"></div><button class="btn" id="codeGo">Davom etish</button></div>
+ <p class="muted" id="tgInfo"></p>
+</section>
+
+<section id="sName" hidden>
+ <h1 id="nTopic"></h1><p class="muted">Ism-familiyangizni tanlang.</p>
+ <div class="card"><input id="nSearch" placeholder="Qidirish…" autocomplete="off"><input id="nFree" placeholder="Ism-familiya" autocomplete="name" hidden><div class="names" id="nList"></div><div class="err" id="nameErr"></div>
+ <button class="btn" id="nameGo" disabled>Davom etish</button></div>
+</section>
+
+<section id="sIntro" hidden>
+ <h1 id="iTopic"></h1>
+ <div class="card"><p id="iWho" style="margin-top:0"></p><p id="iInfo"></p>
+ <div class="note">⚠️ Test davomida Telegramdan yoki boshqa ilovaga chiqmang — har bir chiqish qayd etiladi va o‘qituvchiga yuboriladi. Vaqt tugasa, javoblar avtomatik topshiriladi.</div>
+ <div class="err" id="startErr"></div><button class="btn" id="startGo">▶ Testni boshlash</button></div>
+</section>
+
+<section id="sTest" hidden>
+ <div class="top"><div class="timer" id="timer">--:--</div><div class="prog"><i id="progBar"></i></div><div class="muted" id="progTx"></div></div>
+ <div id="leaveNote" class="note" hidden></div>
+ <div class="qnum" id="qNum"></div><p class="qtext" id="qText"></p><div class="opts" id="qOpts"></div>
+ <div class="nav"><button class="btn ghost" id="prev">‹ Oldingi</button><button class="btn ghost" id="next">Keyingi ›</button></div>
+ <div class="dots" id="dots"></div>
+ <button class="btn" id="finish">✓ Testni yakunlash</button>
+ <div class="err" id="subErr"></div>
+</section>
+
+<section id="sDone" hidden>
+ <h1 class="center" id="dTitle">Javoblar qabul qilindi</h1>
+ <div class="card center"><div class="big" id="dScore"></div><p id="dInfo"></p></div>
+ <button class="btn" id="closeApp">Yopish</button>
+</section>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbx6ER4vJgOge2yHu8kj3LetnRqt2yOUtCeHbdbsbG7j6JCIWhTEQnqdMVywpbJZ6fJqjg/exec';
+const tw=window.Telegram&&window.Telegram.WebApp;const initData=(tw&&tw.initData)||'';
+if(tw){tw.ready();tw.expand();try{tw.setHeaderColor('bg_color')}catch(e){}}
+const $=id=>document.getElementById(id);
+const show=id=>{['sCode','sName','sIntro','sTest','sDone'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)};
+const busy=b=>$('spin').hidden=!b;
+const store={get(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+async function api(action,data){const r=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({action,initData},data||{}))});const j=await r.json();if(!j.ok)throw new Error(j.error||'Xatolik');return j}
+const hap=t=>{try{tw&&tw.HapticFeedback&&(t==='sel'?tw.HapticFeedback.selectionChanged():tw.HapticFeedback.notificationOccurred(t))}catch(e){}};
+$('tgInfo').textContent=initData?'':'Test Telegram bot ichida ochilmagan. O‘qituvchi ruxsat bergan bo‘lsa, brauzerda ham ishlaydi.';
+
+let code='',sess=null,name='',att=null,answers=[],cur=0,leaves=0,offset=0,tick=null,submitting=false,done=false;
+const key=()=>'sbt:'+code+':'+name;
+function persist(){if(att)store.set(key(),{id:att.attemptId,answers,leaves})}
+
+/* 1. Kod */
+$('code').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,6);$('codeErr').textContent=''});
+$('code').addEventListener('keydown',e=>{if(e.key==='Enter')$('codeGo').click()});
+$('codeGo').onclick=async()=>{code=$('code').value.trim();if(code.length<4){$('codeErr').textContent='Kod 4 xonali bo‘ladi';return}
+ busy(true);try{sess=await api('session',{code});if(sess.mine){name=sess.mine;await begin(true);return}renderNames();show('sName')}catch(e){$('codeErr').textContent=e.message}finally{busy(false)}};
+
+/* 2. Ism */
+function renderNames(){$('nTopic').textContent=sess.topic;const q=$('nSearch').value.trim().toLowerCase();
+ $('nSearch').hidden=sess.freeName;$('nFree').hidden=!sess.freeName;
+ if(sess.freeName){$('nList').innerHTML='';$('nameGo').disabled=!$('nFree').value.trim();return}
+ $('nList').innerHTML='';sess.names.filter(x=>!q||x.name.toLowerCase().includes(q)).forEach(x=>{const b=document.createElement('button');b.type='button';b.textContent=x.name;
+  if(x.state){const s=document.createElement('small');s.textContent=x.state==='done'?'topshirgan':'boshlangan';b.append(s)}
+  b.disabled=x.state==='done';if(x.name===name)b.classList.add('sel');b.onclick=()=>{name=x.name;hap('sel');renderNames();$('nameGo').disabled=false;$('nameErr').textContent=''};$('nList').append(b)})}
+$('nSearch').addEventListener('input',renderNames);
+$('nFree').addEventListener('input',()=>{name=$('nFree').value.trim();$('nameGo').disabled=!name});
+$('nameGo').onclick=()=>{if(!name)return;$('iTopic').textContent=sess.topic;$('iWho').innerHTML='👤 <b></b>';$('iWho').querySelector('b').textContent=name;
+ $('iInfo').textContent=sess.n+' ta savol · '+sess.minutes+' daqiqa';show('sIntro')};
+
+/* 3. Boshlash */
+$('startGo').onclick=()=>begin(false);
+async function begin(auto){busy(true);$('startErr').textContent='';
+ const saved=store.get('sbt:'+code+':'+name);
+ try{att=await api('start',{code,name,resume:saved&&saved.id});offset=att.now-Date.now();
+  answers=new Array(att.questions.length).fill(-1);leaves=0;
+  if(saved&&saved.id===att.attemptId){(saved.answers||[]).forEach((v,i)=>{if(i<answers.length)answers[i]=v});leaves=saved.leaves||0}
+  persist();cur=answers.findIndex(v=>v<0);if(cur<0)cur=0;startTest()}
+ catch(e){if(auto){renderNames();show('sName');$('nameErr').textContent=e.message}else $('startErr').textContent=e.message}
+ finally{busy(false)}}
+
+/* 4. Test */
+function startTest(){show('sTest');if(tw){try{tw.enableClosingConfirmation()}catch(e){}}render();clearInterval(tick);tick=setInterval(updTimer,250);updTimer()}
+function remaining(){return att.deadline-(Date.now()+offset)}
+function updTimer(){const ms=remaining(),s=Math.max(0,Math.ceil(ms/1000));$('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+ $('timer').className='timer'+(s<=30?' crit':s<=120?' warn':'');if(ms<=0&&!done)submit(true)}
+function render(){const q=att.questions[cur],n=att.questions.length,a=answers.filter(v=>v>=0).length;
+ $('progBar').style.width=(a/n*100)+'%';$('progTx').textContent=a+'/'+n;$('qNum').textContent='Savol '+(cur+1)+' / '+n;$('qText').textContent=q.text;
+ $('qOpts').innerHTML='';q.options.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.className='opt'+(answers[cur]===i?' sel':'');const l=document.createElement('b');l.textContent='ABCDE'[i];const t=document.createElement('span');t.textContent=o;b.append(l,t);
+  b.onclick=()=>{answers[cur]=i;hap('sel');persist();render();if(cur<n-1)setTimeout(()=>{cur++;render()},250)};$('qOpts').append(b)});
+ $('prev').disabled=cur===0;$('next').disabled=cur===n-1;
+ $('dots').innerHTML='';for(let i=0;i<n;i++){const d=document.createElement('button');d.type='button';d.textContent=i+1;d.className=(answers[i]>=0?'a':'')+(i===cur?' c':'');d.onclick=()=>{cur=i;render()};$('dots').append(d)}}
+$('prev').onclick=()=>{if(cur>0){cur--;render()}};$('next').onclick=()=>{if(cur<att.questions.length-1){cur++;render()}};
+document.addEventListener('visibilitychange',()=>{if(!att||done||$('sTest').hidden)return;if(document.visibilityState==='hidden'){leaves++;persist()}else{$('leaveNote').hidden=false;$('leaveNote').textContent='⚠️ Testdan chiqish qayd etildi ('+leaves+' marta).'}});
+$('finish').onclick=()=>{const left=answers.filter(v=>v<0).length;const msg=left?left+' ta savolga javob bermadingiz. Baribir yakunlaysizmi?':'Testni yakunlaysizmi? Keyin javoblarni o‘zgartirib bo‘lmaydi.';
+ if(tw&&tw.showConfirm){try{tw.showConfirm(msg,ok=>{if(ok)submit(false)});return}catch(e){}}if(confirm(msg))submit(false)};
+async function submit(auto){if(submitting||done)return;submitting=true;clearInterval(tick);$('subErr').textContent='';busy(true);
+ for(let i=0;i<6;i++){try{const r=await api('submit',{attemptId:att.attemptId,answers,leaves,auto});finish(r,auto);return}
+  catch(e){if(/topilmadi/.test(e.message)){$('subErr').textContent=e.message;break}$('subErr').textContent='Internet bilan muammo, qayta urinilmoqda… ('+(i+1)+')';await new Promise(r=>setTimeout(r,2000*(i+1)))}}
+ busy(false);submitting=false;$('subErr').textContent+=' Internetni tekshirib, «Testni yakunlash» tugmasini qayta bosing.'}
+function finish(r,auto){done=true;busy(false);store.del(key());if(tw){try{tw.disableClosingConfirmation()}catch(e){}}hap('success');
+ $('dTitle').textContent=auto?'⌛ Vaqt tugadi — javoblar topshirildi':'✅ Javoblar qabul qilindi';
+ if(r.pct!=null){$('dScore').textContent=r.pct+'%';$('dInfo').textContent=r.correct+' / '+r.total+' to‘g‘ri javob'}else{$('dScore').textContent='✓';$('dInfo').textContent='Natijani o‘qituvchi e’lon qiladi.'}
+ show('sDone')}
+$('closeApp').onclick=()=>{if(tw)tw.close();else window.close()};
+</script></body></html>
